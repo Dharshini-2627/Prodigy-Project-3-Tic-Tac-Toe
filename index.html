@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tic Tac Toe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg-deep:#ffffff;
+    --bg-mid:#f8f9fa;
+    --blue:#4285f4;
+    --blue-glow:#4285f4;
+    --gold:#ea4335;
+    --gold-glow:#ea4335;
+    --cream:#202124;
+    --lavender:#5f6368;
+    --lavender-dim:#9aa0a6;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    height:100%;
+    background:var(--bg-deep);
+    font-family:'Inter', sans-serif;
+    color:var(--cream);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .stage{
+    width:100%;
+    max-width:520px;
+    padding:48px 32px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:28px;
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    color:var(--lavender-dim);
+    font-size:13px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .eyebrow::before, .eyebrow::after{
+    content:'';
+    width:36px;
+    height:2px;
+  }
+  .eyebrow::before{ background:linear-gradient(90deg, var(--blue), transparent); }
+  .eyebrow::after{ background:linear-gradient(90deg, transparent, var(--blue)); }
+
+  h1{
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size:clamp(2rem, 6vw, 2.6rem);
+    text-align:center;
+  }
+
+  .status-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:14px;
+    letter-spacing:0.05em;
+    color:var(--lavender);
+    min-height:24px;
+  }
+  .turn-marker{
+    width:14px;
+    height:14px;
+    border-radius:4px;
+    display:inline-block;
+    transition:background 0.2s ease;
+  }
+  .turn-marker.x{ background:var(--blue-glow); box-shadow:0 0 10px rgba(66,133,244,0.35); }
+  .turn-marker.o{ background:var(--gold-glow); box-shadow:0 0 10px rgba(234,67,53,0.35); }
+
+  .scoreboard{
+    display:flex;
+    gap:20px;
+  }
+  .score-card{
+    text-align:center;
+    padding:10px 18px;
+    border-radius:14px;
+    border:1px solid #dadce0;
+    background:#ffffff;
+    min-width:76px;
+  }
+  .score-card .label{
+    font-size:10px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--lavender-dim);
+    font-weight:600;
+  }
+  .score-card .value{
+    font-family:'Inter', sans-serif;
+    font-size:1.8rem;
+    font-weight:700;
+    margin-top:2px;
+  }
+  .score-card.x .value{ color:var(--blue-glow); }
+  .score-card.o .value{ color:var(--gold-glow); }
+  .score-card.draw .value{ color:var(--lavender); }
+
+  .board{
+    position:relative;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    grid-template-rows:repeat(3, 1fr);
+    width:min(340px, 78vw);
+    aspect-ratio:1/1;
+    background:#ffffff;
+    border:1px solid #dadce0;
+    border-radius:20px;
+    box-shadow:0 1px 2px rgba(60,64,67,0.1), 0 4px 12px rgba(60,64,67,0.08);
+    padding:10px;
+    gap:10px;
+  }
+
+  .cell{
+    background:#f8f9fa;
+    border:1px solid #e8eaed;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    font-size:2.6rem;
+    color:var(--cream);
+    transition:background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    user-select:none;
+  }
+  .cell:hover:not(.filled):not(.locked){
+    background:#f1f3f4;
+    border-color:#bdc1c6;
+  }
+  .cell:active:not(.filled):not(.locked){ transform:scale(0.96); }
+  .cell.x{ color:var(--blue-glow); text-shadow:0 0 14px rgba(66,133,244,0); }
+  .cell.o{ color:var(--gold-glow); text-shadow:0 0 14px rgba(234,67,53,0); }
+  .cell.win{
+    background:#e8f0fe;
+    border-color:#4285f4;
+  }
+  .cell.filled, .cell.locked{ cursor:default; }
+
+  @keyframes popIn{
+    from{ opacity:0; transform:scale(0.5); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .cell.x span, .cell.o span{ animation:popIn 0.2s ease; display:inline-block; }
+
+  .controls{
+    display:flex;
+    gap:16px;
+  }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:0.03em;
+    border-radius:999px;
+    border:1px solid #dadce0;
+    padding:13px 28px;
+    cursor:pointer;
+    background:#ffffff;
+    color:var(--cream);
+    transition:transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  button:hover{ transform:translateY(-1px); border-color:#4285f4; }
+  button:active{ transform:translateY(0); }
+  button:focus-visible{ outline:2px solid var(--blue-glow); outline-offset:3px; }
+
+  #newRound{
+    background:linear-gradient(135deg, var(--blue), #1a73e8);
+    border-color:transparent;
+    box-shadow:0 8px 24px -8px rgba(66,133,244,0.35);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="eyebrow">Task&#8209;03 &middot; Tic Tac Toe</div>
+  <h1>Tic Tac Toe</h1>
+
+  <div class="status-bar" id="statusBar">
+    <span class="turn-marker x" id="turnMarker"></span>
+    <span id="statusText">Player X's turn</span>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-card x">
+      <div class="label">Player X</div>
+      <div class="value" id="scoreX">0</div>
+    </div>
+    <div class="score-card draw">
+      <div class="label">Draws</div>
+      <div class="value" id="scoreDraw">0</div>
+    </div>
+    <div class="score-card o">
+      <div class="label">Player O</div>
+      <div class="value" id="scoreO">0</div>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="controls">
+    <button id="resetScores">Reset Scores</button>
+    <button id="newRound">New Round</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const boardEl = document.getElementById('board');
+  const statusText = document.getElementById('statusText');
+  const turnMarker = document.getElementById('turnMarker');
+  const scoreXEl = document.getElementById('scoreX');
+  const scoreOEl = document.getElementById('scoreO');
+  const scoreDrawEl = document.getElementById('scoreDraw');
+  const newRoundBtn = document.getElementById('newRound');
+  const resetScoresBtn = document.getElementById('resetScores');
+
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  let board = Array(9).fill(null);
+  let currentPlayer = 'X';
+  let gameOver = false;
+  let scores = { X:0, O:0, draw:0 };
+
+  function buildBoard(){
+    boardEl.innerHTML = '';
+    for (let i = 0; i < 9; i++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.index = i;
+      cell.addEventListener('click', () => handleMove(i));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  function handleMove(index){
+    if (gameOver || board[index]) return;
+    board[index] = currentPlayer;
+    renderCell(index);
+
+    const winInfo = checkWin();
+    if (winInfo){
+      gameOver = true;
+      highlightWin(winInfo.line);
+      scores[currentPlayer]++;
+      updateScores();
+      statusText.textContent = `Player ${currentPlayer} wins!`;
+      lockBoard();
+      return;
+    }
+
+    if (board.every(c => c)){
+      gameOver = true;
+      scores.draw++;
+      updateScores();
+      statusText.textContent = "It's a draw!";
+      return;
+    }
+
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    updateTurnDisplay();
+  }
+
+  function renderCell(index){
+    const cell = boardEl.children[index];
+    cell.classList.add('filled', currentPlayer.toLowerCase());
+    cell.innerHTML = `<span>${currentPlayer}</span>`;
+  }
+
+  function checkWin(){
+    for (const line of WIN_LINES){
+      const [a,b,c] = line;
+      if (board[a] && board[a] === board[b] && board[b] === board[c]){
+        return { line };
+      }
+    }
+    return null;
+  }
+
+  function highlightWin(line){
+    line.forEach(i => boardEl.children[i].classList.add('win'));
+  }
+
+  function lockBoard(){
+    Array.from(boardEl.children).forEach(c => c.classList.add('locked'));
+  }
+
+  function updateTurnDisplay(){
+    statusText.textContent = `Player ${currentPlayer}'s turn`;
+    turnMarker.className = `turn-marker ${currentPlayer.toLowerCase()}`;
+  }
+
+  function updateScores(){
+    scoreXEl.textContent = scores.X;
+    scoreOEl.textContent = scores.O;
+    scoreDrawEl.textContent = scores.draw;
+  }
+
+  function newRound(){
+    board = Array(9).fill(null);
+    currentPlayer = 'X';
+    gameOver = false;
+    buildBoard();
+    updateTurnDisplay();
+  }
+
+  function resetAll(){
+    scores = { X:0, O:0, draw:0 };
+    updateScores();
+    newRound();
+  }
+
+  newRoundBtn.addEventListener('click', newRound);
+  resetScoresBtn.addEventListener('click', resetAll);
+
+  buildBoard();
+  updateTurnDisplay();
+})();
+</script>
+
+</body>
+</html>
